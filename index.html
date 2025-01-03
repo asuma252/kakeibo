@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --primary-color: #FFB6C1;
+      --secondary-color: #FFF0F5;
+      --text-color: #663399;
+      --border-radius: 15px;
+      --font-family: 'M PLUS Rounded 1c', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-family);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: var(--secondary-color);
+      color: var(--text-color);
+      font-size: 36px;
+      line-height: 1.6;
+    }
+
+    .content {
+      flex: 1;
+      padding: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      color: var(--primary-color);
+      margin-bottom: 30px;
+      font-size: 4.2rem;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 入力フォーム */
+    #budget-form {
+      background-color: white;
+      padding: 40px 30px;
+      border-radius: var(--border-radius);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      margin: 10px auto;
+      width: 95%;
+      max-width: 900px;
+      position: relative;
+    }
+
+    #budget-form label {
+      margin-bottom: 15px;
+      display: block;
+      font-weight: 500;
+      font-size: 2.2rem;
+      text-align: left;
+    }
+
+    #budget-form input,
+    #budget-form select {
+      padding: 24px;
+      margin-bottom: 30px;
+      border: 2px solid var(--primary-color);
+      border-radius: var(--border-radius);
+      font-size: 2.2rem;
+      box-sizing: border-box;
+      width: 100%;
+      transition: border-color 0.3s ease;
+    }
+
+    #budget-form input:focus,
+    #budget-form select:focus {
+      outline: none;
+      border-color: #FF69B4;
+    }
+
+    #budget-form button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 30px 40px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 2.5rem;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      position: relative;
+      margin-top: 20px;
+    }
+
+    #budget-form button:hover {
+      background-color: #FF69B4;
+    }
+
+    #budget-form button:disabled {
+      background-color: #fbbcd1;
+      cursor: not-allowed;
+    }
+
+    /* スピナー */
+    .spinner {
+      display: none;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+
+    #budget-form button.loading .spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* データテーブル */
+    #data-table-header-container {
+      margin: 0 auto;
+      overflow-x: auto;
+      width: 95%;
+      max-width: 900px;
+      background-color: transparent;
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+      border-top-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+    }
+
+    #data-table-container {
+      margin: 0px auto 0;
+      overflow-x: auto;
+      width: 95%;
+      max-width: 900px;
+      max-height: 35vh;
+      overflow-y: auto;
+      background-color: white;
+      position: relative;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1.8rem;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    table th,
+    table td {
+      padding: 24px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    table th {
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 500;
+      text-align: center;
+
+    }
+
+    table td {
+      text-align: center;
+    }
+
+    /* テーブルヘッダーのスタイルを調整 */
+    #data-table-header-container table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    /* データテーブルの背景を白に */
+    #data-table-container table {
+      background-color: white;
+    }
+
+    /* データ読み込み中のスタイルの調整 */
+    #data-table-container #data-table {
+      background-color: white;
+      position: relative;
+
+    }
+
+    #data-table-container #data-table::before {
+      content: 'データ読み込み中...';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.6rem;
+      color: #663399;
+      background-color: transparent;
+      display: block;
+    }
+
+    #data-table-container.loaded #data-table::before {
+      display: none;
+    }
+
+    /* タブ */
+    .tabs {
+      display: flex;
+      justify-content: space-around;
+      background-color: white;
+      padding: 20px 0;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 30px 0;
+      cursor: pointer;
+      color: var(--text-color);
+      transition: all 0.3s ease;
+      font-size: 2.6rem;
+      border-top: 6px solid transparent;
+    }
+
+    .tab.active {
+      color: #FF69B4;
+      border-top: 6px solid #FF69B4;
+      font-weight: 500;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 768px) {
+      .tabs {
+        flex-direction: row;
+        height: auto;
+      }
+
+      .tab {
+        padding: 20px;
+        font-size: 2.4rem;
+      }
+
+      .content {
+        padding: 10px;
+      }
+
+      #budget-form {
+        padding: 20px;
+      }
+
+      #budget-form label {
+        font-size: 1.8rem;
+      }
+
+      #budget-form input,
+      #budget-form select {
+        font-size: 1.8rem;
+        padding: 18px;
+      }
+
+      #budget-form button {
+        font-size: 2.0rem;
+        padding: 20px 30px;
+      }
+
+      table {
+        font-size: 1.6rem;
+      }
+
+      table th,
+      table td {
+        padding: 18px;
+      }
+
+      .tab {
+        font-size: 2.0rem;
+        padding: 15px;
+      }
+    }
+
+    /* メッセージ表示エリアのスタイル */
+    #message-container {
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: translateY(20px);
+      font-size: 1.8rem;
+      font-weight: 500;
+      color: #FF69B4;
+    }
+
+    #message-container.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+
+    /* ハートアニメーション */
+    .heart {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background-color: #FF69B4;
+      position: relative;
+      transform: rotate(-45deg);
+      margin: 0 5px;
+    }
+
+    .heart::before,
+    .heart::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #FF69B4;
+    }
+
+    .heart::before {
+      top: -10px;
+      left: 0;
+    }
+
+    .heart::after {
+      top: 0;
+      left: 10px;
+    }
+
+    .heart-animation {
+      animation: heartBeat 1s ease infinite;
+      transform-origin: center;
+    }
+
+    @keyframes heartBeat {
+      0%,
+      100% {
+        transform: scale(1) rotate(-45deg);
+      }
+
+      50% {
+        transform: scale(1.3) rotate(-45deg);
+      }
+    }
+
+    /* 集計データのスタイル */
+    #summary-container {
+      margin: 20px 0;
+      max-width: 100%;
+      width: 100%;
+      padding: 20px 0;
+      background-color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      border-bottom: 1px dashed #eee;
+      font-size: 2.0rem;
+    }
+
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+
+    .summary-item .label {
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+
+    .summary-item .value {
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="content" id="content"></div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('input')">家計簿記帳</div>
+    <div class="tab" onclick="switchTab('view')">今月の家計簿</div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      loadInputForm();
+    });
+
+    function switchTab(tabName) {
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(tab => {
+        if (tab.textContent === (tabName === 'input' ? '家計簿記帳' : '今月の家計簿')) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+
+      if (tabName === 'input') {
+        loadInputForm();
+      } else if (tabName === 'view') {
+        loadViewData();
+      }
+    }
+
+    function loadInputForm() {
+      const content = document.getElementById('content');
+      content.innerHTML = `
+                <form id="budget-form">
+                  <label for="memo">メモ（品目など）:</label><br>
+                  <input type="text" id="memo" name="memo" required aria-required="true"><br><br>
+
+                  <label for="category">内訳:</label><br>
+                  <select id="category" name="category" required aria-required="true">
+                    <option value="">選択してください</option>
+                    <option value="食費">食費</option>
+                    <option value="Amazon">Amazon</option>
+                    <option value="遊び">遊び</option>
+                    <option value="外食">外食</option>
+                    <option value="その他">その他</option>
+                      <option value="収入">収入</option>
+                  </select><br><br>
+
+                  <label for="amount">金額:</label><br>
+                  <input type="number" id="amount" name="amount" required min="0" aria-required="true"><br><br>
+
+                  <button type="submit">送信
+                    <div class="spinner"></div>
+                  </button>
+                <div id="message-container"></div>
+                </form>
+              `;
+
+      document.getElementById('budget-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        submitForm();
+      });
+    }
+
+
+    function submitForm() {
+      const form = document.getElementById('budget-form');
+      const submitButton = form.querySelector('button[type="submit"]');
+      const messageContainer = document.getElementById('message-container');
+
+      submitButton.disabled = true;
+      submitButton.classList.add('loading');
+
+      const memo = document.getElementById('memo').value;
+      const category = document.getElementById('category').value;
+      const amount = parseInt(document.getElementById('amount').value, 10);
+
+      if (isNaN(amount) || amount < 0) {
+        alert('有効な金額を入力してください。');
+        submitButton.disabled = false;
+        submitButton.classList.remove('loading');
+        return;
+      }
+
+      google.script.run.withSuccessHandler(function () {
+        messageContainer.innerHTML = `データが追加されました！ <span class="heart heart-animation"></span>`;
+        messageContainer.classList.add('show'); // メッセージを表示
+        form.reset();
+        submitButton.disabled = false;
+        submitButton.classList.remove('loading');
+
+        // メッセージを一定時間後に非表示にする
+        setTimeout(() => {
+          messageContainer.classList.remove('show');
+          messageContainer.innerHTML = '';
+        }, 3000);
+
+      }).withFailureHandler(function (error) {
+        alert('エラーが発生しました: ' + error.message);
+        submitButton.disabled = false;
+        submitButton.classList.remove('loading');
+      }).addBudgetData(memo, category, amount);
+    }
+
+    function loadViewData() {
+      const content = document.getElementById('content');
+      content.innerHTML = `
+                     <div id="data-table-header-container">
+                       <table id="data-table-header">
+                         <thead>
+                           <tr>
+                             <th>日付</th>
+                             <th>メモ</th>
+                             <th>内訳</th>
+                             <th>金額</th>
+                           </tr>
+                          </thead>
+                        </table>
+                      </div>
+                     <div id="data-table-container">
+                       <div id="data-table"></div>
+                      </div>
+                    <div id="summary-container"></div>
+                `;
+      const dataTableContainer = document.getElementById('data-table-container');
+      dataTableContainer.classList.remove('loaded'); // ローディング表示
+
+      google.script.run.withSuccessHandler(function (data) {
+        if (data.length === 0) {
+          document.getElementById('data-table').innerHTML = '<p>データがありません。</p>';
+          dataTableContainer.classList.add('loaded'); // ローディング表示を消す
+          return;
+        }
+
+        let tableHTML = `
+                         <table>
+                    `;
+        data.forEach(row => {
+          tableHTML += `
+                          <tr>
+                            <td>${row.date}</td>
+                            <td>${row.memo}</td>
+                            <td>${row.category}</td>
+                            <td>¥${Number(row.amount).toLocaleString()}</td>
+                          </tr>
+                        `;
+        });
+        tableHTML += `</table>`;
+        document.getElementById('data-table').innerHTML = tableHTML;
+        dataTableContainer.classList.add('loaded'); // ローディング表示を消す
+      }).getCurrentMonthData();
+
+      google.script.run.withSuccessHandler(function (summaryData) {
+        const summaryContainer = document.getElementById('summary-container');
+        summaryContainer.innerHTML = `
+                         <div class="summary-item">
+                                <span class="label">食費:</span>
+                                <span class="value">¥${Number(summaryData.foodCost).toLocaleString()}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">Amazon・日用品:</span>
+                                <span class="value">¥${Number(summaryData.amazonCost).toLocaleString()}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">遊び:</span>
+                                <span class="value">¥${Number(summaryData.playCost).toLocaleString()}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">外食:</span>
+                                <span class="value">¥${Number(summaryData.eatingOutCost).toLocaleString()}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="label">その他:</span>
+                                <span class="value">¥${Number(summaryData.otherCost).toLocaleString()}</span>
+                            </div>
+                              <div class="summary-item">
+                                  <span class="label">合計出費:</span>
+                                  <span class="value">¥${Number(summaryData.totalExpenses).toLocaleString()}</span>
+                              </div>
+                             <div class="summary-item">
+                                 <span class="label">今月の固定費:</span>
+                                  <span class="value">¥${Number(summaryData.fixedCost).toLocaleString()}</span>
+                             </div>
+                              <div class="summary-item">
+                                 <span class="label">今月の総出費:</span>
+                                  <span class="value">¥${Number(summaryData.totalOutlay).toLocaleString()}</span>
+                             </div>
+                              <div class="summary-item">
+                                 <span class="label">別収入:</span>
+                                 <span class="value">¥${Number(summaryData.subIncome).toLocaleString()}</span>
+                             </div>
+                            <div class="summary-item">
+                                  <span class="label">今月収支目安:</span>
+                                   <span class="value">¥${Number(summaryData.monthlyBalance).toLocaleString()}</span>
+                             </div>
+                        `;
+      }).getCurrentMonthSummary();
+    }
+  </script>
+</body>
+
+</html>
